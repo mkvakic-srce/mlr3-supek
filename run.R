@@ -13,7 +13,12 @@ library(future.apply)
 
 
 # SETUP -------------------------------------------------------------------
-mlr3_save_path = "./H2"
+# create folder in which we will save results
+time_ = format.POSIXct(Sys.time(), format = "%Y%m%d%H%M%S")
+mlr3_save_path = paste0("./H2-", time_)
+if (!dir.exists(mlr3_save_path)) {
+  dir.create(mlr3_save_path)
+}
 
 # utils https://stackoverflow.com/questions/1995933/number-of-months-between-two-dates
 monnb <- function(d) {
@@ -22,9 +27,10 @@ monnb <- function(d) {
 mondf <- function(d1, d2) { monnb(d2) - monnb(d1) }
 
 
+
 # PREPARE DATA ------------------------------------------------------------
 # read predictors
-data_tbl = read.csv("./pead-predictors-sample.csv")
+data_tbl = fread("./pead-predictors.csv")
 
 # convert tibble to data.table
 DT = as.data.table(data_tbl)
@@ -68,6 +74,13 @@ DT = DT[, (names(factor_cols)) := lapply(.SD, as.factor), .SD = names(factor_col
 # if we want to keep as much data as possible an use only one predicitn horizont
 # we can skeep this step
 DT = na.omit(DT, cols = setdiff(targets, colnames(DT)[grep("extreme", colnames(DT))]))
+
+# change IDate to date, because of error
+# Assertion on 'feature types' failed: Must be a subset of
+# {'logical','integer','numeric','character','factor','ordered','POSIXct'},
+# but has additional elements {'IDate'}.
+DT[, date := as.POSIXct(date, tz = "UTC")]
+DT[, .(symbol,date, date_rolling, yearmonthid)]
 
 # sort
 setorder(DT, date)
@@ -119,6 +132,9 @@ task_ret_month2$col_roles$feature = setdiff(task_ret_month2$col_roles$feature,
 task_ret_quarter$col_roles$feature = setdiff(task_ret_quarter$col_roles$feature,
                                              id_cols)
 
+
+
+# CROSS VALIDATIONS -------------------------------------------------------
 # create train, tune and test set
 nested_cv_split = function(task,
                            train_length = 60,
@@ -191,7 +207,7 @@ nested_cv_split = function(task,
   custom_outer$instantiate(task, inner_sets, test_sets)
   return(list(custom_inner = custom_inner, custom_outer = custom_outer))
 }
-custom_cvs = nested_cv_split(task_ret_week, 24, 3, 1)
+custom_cvs = nested_cv_split(task_ret_week, 36, 3, 1)
 custom_inner = custom_cvs$custom_inner
 custom_outer = custom_cvs$custom_outer
 
@@ -332,13 +348,3 @@ future_lapply(1:custom_inner$iters, function(i) {
 })
 end_time = Sys.time()
 end_time - start_time
-
-# 2 folds
-# sequential:                13.69806 mins
-# mulrisession (workers = 2) 6.928072 mins
-# mulrisession (workers = 4) 7.194049 mins
-
-# 4 folds
-# sequential:
-# mulrisession (workers = 2) 14.10068 mins
-# mulrisession (workers = 4) 7.346862 mins

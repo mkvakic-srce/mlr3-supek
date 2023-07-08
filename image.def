@@ -25,6 +25,7 @@ From: r-base:4.3.0
   R --slave -e 'install.packages("paradox")'
   R --slave -e 'install.packages("ranger")'
   R --slave -e 'install.packages("R6")'
+  R --slave -e 'install.packages("bit64")'
 
 %runscript
   Rscript $@

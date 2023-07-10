@@ -29,6 +29,8 @@ mondf <- function(d1, d2) { monnb(d2) - monnb(d1) }
 
 
 # PREPARE DATA ------------------------------------------------------------
+print("Prepare data")
+
 # read predictors
 data_tbl = fread("./pead-predictors.csv")
 
@@ -88,6 +90,8 @@ setorder(DT, date)
 
 
 # TASKS -------------------------------------------------------------------
+print("Tasks")
+
 # id coluns we always keep
 id_cols = c("symbol", "date", "yearmonthid")
 
@@ -135,6 +139,8 @@ task_ret_quarter$col_roles$feature = setdiff(task_ret_quarter$col_roles$feature,
 
 
 # CROSS VALIDATIONS -------------------------------------------------------
+print("Cross validations")
+
 # create train, tune and test set
 nested_cv_split = function(task,
                            train_length = 60,
@@ -225,6 +231,8 @@ all(vapply(1:custom_inner$iters, function(i) {
 
 
 # ADD PIPELINES -----------------------------------------------------------
+print("Add pipelines")
+
 # source pipes, filters and other
 source("mlr3_winsorization.R")
 source("mlr3_uniformization.R")
@@ -257,6 +265,8 @@ mlr_measures$add("adjloss2", AdjLoss2)
 
 
 # GRAPH V2 ----------------------------------------------------------------
+print("Create graph")
+
 # non pca ghraph
 graph_nonpca = po("dropnacol", id = "dropnacol", cutoff = 0.05) %>>%
   po("dropna", id = "dropna") %>>%
@@ -304,6 +314,8 @@ design
 
 
 # NESTED CV BENCHMARK -----------------------------------------------------
+print("Benchmark")
+
 # nested for loop
 future::plan("multicore")
 list.files(mlr3_save_path, full.names = TRUE)

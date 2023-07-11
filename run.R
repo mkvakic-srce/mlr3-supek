@@ -85,7 +85,11 @@ DT[, date := as.POSIXct(date, tz = "UTC")]
 DT[, .(symbol,date, date_rolling, yearmonthid)]
 
 # sort
-setorder(DT, date)
+# this returns error on HPC. Some problem with memory
+# setorder(DT, date)
+print("This was the problem")
+DT = DT[order(date)]
+print("This was the problem. Solved.")
 
 
 

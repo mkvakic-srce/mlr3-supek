@@ -331,12 +331,14 @@ future_lapply(1:custom_inner$iters, function(i) {
   print(i)
 
   # inner resampling
+  print("Define CV")
   custom_ = rsmp("custom")
   custom_$instantiate(task_ret_week,
                       list(custom_inner$train_set(i)),
                       list(custom_inner$test_set(i)))
 
   # auto tuner
+  print("Define autotuner")
   at_pca = auto_tuner(
     tuner = tnr("grid_search", resolution = 20, batch_size = 2),
     learner = graph_pca_lrn,
@@ -346,10 +348,12 @@ future_lapply(1:custom_inner$iters, function(i) {
   )
 
   # outer resampling
+  print("Define outer CV")
   customo_ = rsmp("custom")
   customo_$instantiate(task_ret_week, list(custom_outer$train_set(i)), list(custom_outer$test_set(i)))
 
   # nested CV for one round
+  print("Benchmark!")
   design = benchmark_grid(
     tasks = list(task_ret_week, task_ret_month), #, task_ret_month2, task_ret_quarter
     learners = list(at_pca, graph_nonpca_lrn),
@@ -358,6 +362,7 @@ future_lapply(1:custom_inner$iters, function(i) {
   system.time({bmr = benchmark(design, store_models = TRUE)})
 
   # save locally and to list
+  print("Save")
   time_ = format.POSIXct(Sys.time(), format = "%Y%m%d%H%M%S")
   saveRDS(bmr, file.path(mlr3_save_path, paste0(i, "-", time_, ".rds")))
   return(NULL)

@@ -82,13 +82,14 @@ DT = na.omit(DT, cols = setdiff(targets, colnames(DT)[grep("extreme", colnames(D
 # {'logical','integer','numeric','character','factor','ordered','POSIXct'},
 # but has additional elements {'IDate'}.
 DT[, date := as.POSIXct(date, tz = "UTC")]
-DT[, .(symbol,date, date_rolling, yearmonthid)]
+# DT[, .(symbol,date, date_rolling, yearmonthid)]
 
 # sort
 # this returns error on HPC. Some problem with memory
 # setorder(DT, date)
 print("This was the problem")
-DT = DT[order(date)]
+# DT = DT[order(date)] # DOESNT WORK TOO
+DT = DT[order(yearmonthid)]
 print("This was the problem. Solved.")
 
 

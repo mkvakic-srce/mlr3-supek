@@ -3,7 +3,6 @@
 .RData
 .Ruserdata
 blob_key.txt
-id_rsa_srce
+id_rsa_srce*
 pead-predictors.csv
 pead-predictors-sample.csv
-id_rsa_srce.ppk

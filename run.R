@@ -9,13 +9,9 @@ library(mlr3misc)
 library(future)
 library(future.apply)
 
-
-
-
 # SETUP -------------------------------------------------------------------
 # create folder in which we will save results
-time_ = format.POSIXct(Sys.time(), format = "%Y%m%d%H%M%S")
-mlr3_save_path = paste0("./H2-", time_)
+mlr3_save_path = paste0("./H2-jobarray-", Sys.getenv('PBS_ARRAY_ID'))
 if (!dir.exists(mlr3_save_path)) {
   dir.create(mlr3_save_path)
 }
@@ -25,8 +21,6 @@ monnb <- function(d) {
   lt <- as.POSIXlt(as.Date(d, origin="1900-01-01"))
   lt$year*12 + lt$mon }
 mondf <- function(d1, d2) { monnb(d2) - monnb(d1) }
-
-
 
 # PREPARE DATA ------------------------------------------------------------
 print("Prepare data")
@@ -300,6 +294,11 @@ graph_pca = po("dropnacol", id = "dropnacol", cutoff = 0.05) %>>%
 plot(graph_pca)
 graph_pca_lrn = as_learner(graph_pca)
 
+# threads
+threads = as.integer(Sys.getenv("NCPUS"))
+set_threads(graph_pca_lrn, n = threads)
+set_threads(graph_nonpca_lrn, n = threads)
+
 # pca params
 as.data.table(graph_pca_lrn$param_set)[, .(id, class, lower, upper)]
 search_space = ps(
@@ -316,18 +315,14 @@ search_space = ps(
 design = rbindlist(generate_design_grid(search_space, 20)$transpose(), fill = TRUE)
 design
 
-
-
 # NESTED CV BENCHMARK -----------------------------------------------------
 print("Benchmark")
 
 # nested for loop
-future::plan("multicore")
 list.files(mlr3_save_path, full.names = TRUE)
-start_time = Sys.time()
-future_lapply(1:custom_inner$iters, function(i) {
+nested_cv_benchmark <- function(i) {
+
   # debug
-  # i = 1
   print(i)
 
   # inner resampling
@@ -367,6 +362,10 @@ future_lapply(1:custom_inner$iters, function(i) {
   saveRDS(bmr, file.path(mlr3_save_path, paste0(i, "-", time_, ".rds")))
   return(NULL)
 
-})
+}
+
+i = as.integer(Sys.getenv('PBS_ARRAY_INDEX'))
+start_time = Sys.time()
+nested_cv_benchmark(i)
 end_time = Sys.time()
 end_time - start_time
